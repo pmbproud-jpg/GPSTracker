@@ -205,11 +205,11 @@ export default function ClientMap() {
           <Ionicons name="refresh" size={20} color="#4A90D9" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() =>
-            Alert.alert("Abmelden?", "", [
-              { text: "Abbrechen" },
-              { text: "Ja", onPress: signOut, style: "destructive" },
-            ])
+          onPress={() => {
+            if (typeof window !== "undefined" && window.confirm("Abmelden?")) {
+              signOut();
+            }
+          }
           }
           style={{ padding: 4 }}
         >

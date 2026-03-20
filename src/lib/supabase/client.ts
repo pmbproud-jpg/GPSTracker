@@ -5,11 +5,22 @@ import "react-native-url-polyfill/auto";
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
+// Guard: AsyncStorage wymaga `window` — na serwerze (SSR) używamy localStorage fallback
+const isServer = typeof window === "undefined";
+
+const storage = isServer
+  ? {
+      getItem: (_key: string) => Promise.resolve(null),
+      setItem: (_key: string, _value: string) => Promise.resolve(),
+      removeItem: (_key: string) => Promise.resolve(),
+    }
+  : AsyncStorage;
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage,
     autoRefreshToken: true,
-    persistSession: true,
+    persistSession: !isServer,
     detectSessionInUrl: false,
   },
 });

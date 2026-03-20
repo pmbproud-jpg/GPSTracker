@@ -14,7 +14,6 @@ const DEFERRED_DISTANCE_M = 50;
 let _activeUserId: string | null = null;
 let _activeCompanyId: string | null = null;
 
-// Background task — top-level module scope
 TaskManager.defineTask(TASK_NAME, async ({ data, error }) => {
   if (error || !data) return;
   const { locations } = data as { locations: Location.LocationObject[] };

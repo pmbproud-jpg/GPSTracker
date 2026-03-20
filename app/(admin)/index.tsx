@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -100,10 +99,11 @@ export default function AdminDashboard() {
           </View>
         </View>
         <TouchableOpacity
-          onPress={() => Alert.alert("Abmelden?", "", [
-            { text: "Abbrechen" },
-            { text: "Ja", onPress: signOut, style: "destructive" },
-          ])}
+          onPress={() => {
+            if (typeof window !== "undefined" && window.confirm("Abmelden?")) {
+              signOut();
+            }
+          }}
           style={{ padding: 8 }}
         >
           <Ionicons name="log-out-outline" size={24} color="#dc2626" />
