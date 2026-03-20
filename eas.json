@@ -6,6 +6,11 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://unoldjqyyokdzizuhvgs.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVub2xkanF5eW9rZHppenVodmdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5OTgwMDUsImV4cCI6MjA4OTU3NDAwNX0.rihw1sU2WrgJ9NXR2xmndo4GDtMG_e4G-YfHW9-bbDM",
+        "EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVub2xkanF5eW9rZHppenVodmdzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzk5ODAwNSwiZXhwIjoyMDg5NTc0MDA1fQ.N2FnO80huB_TfEx-YSAmHJA_HjtvzExHlMJtjsYaFyA"
+      },
       "android": {
         "buildType": "apk"
       }
