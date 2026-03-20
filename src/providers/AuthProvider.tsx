@@ -120,22 +120,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Worker sign in with invite code
   const signInWithCode = async (code: string) => {
-    // Look up worker by code
-    const { data: profile } = await supabase
+    const trimmedCode = code.toUpperCase().trim();
+
+    // Lookup via supabaseAdmin (worker nie jest zalogowany → RLS blokuje supabase)
+    const { data: workerProfile } = await supabaseAdmin
       .from("profiles")
       .select("id, email")
-      .eq("worker_code", code.toUpperCase().trim())
+      .eq("worker_code", trimmedCode)
       .single();
 
-    if (!profile) return { error: "Nieprawidlowy kod" };
+    if (!workerProfile) return { error: "Ungültiger Code" };
 
-    // Workers use their code as password (set during creation)
-    const email = profile.email;
-    if (!email) return { error: "Brak emaila pracownika" };
+    const email = workerProfile.email;
+    if (!email) return { error: "Kein E-Mail für diesen Mitarbeiter" };
 
+    // Hasło = kod (ustawione przy tworzeniu)
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password: code.toUpperCase().trim(),
+      password: trimmedCode,
     });
     return { error: error?.message ?? null };
   };
