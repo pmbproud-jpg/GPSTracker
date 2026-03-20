@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,7 +14,7 @@ import {
 } from "react-native";
 
 function generateCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -28,18 +27,30 @@ export default function NewWorkerScreen() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const companyId = profile?.company_id;
 
   const handleCreate = async () => {
-    if (!name.trim() || !companyId) return;
+    setError(null);
+
+    if (!name.trim()) {
+      setError("Bitte einen Namen eingeben");
+      return;
+    }
+    if (!companyId) {
+      setError("Keine Firma zugeordnet. Bitte erneut einloggen. (company_id fehlt)");
+      return;
+    }
+
     setLoading(true);
 
     const code = generateCode();
     const fakeEmail = `worker-${code.toLowerCase()}@gpstracker.local`;
 
     try {
-      // 1. Create auth user (with code as password)
+      // 1. Create auth user (service role)
+      console.log("Creating worker:", { fakeEmail, code, companyId });
       const { data: authData, error: authErr } =
         await supabaseAdmin.auth.admin.createUser({
           email: fakeEmail,
@@ -47,14 +58,16 @@ export default function NewWorkerScreen() {
           email_confirm: true,
         });
 
+      console.log("Auth result:", { user: authData?.user?.id, error: authErr });
+
       if (authErr || !authData.user) {
-        Alert.alert("Fehler", authErr?.message || "Benutzer konnte nicht erstellt werden");
+        setError("Auth: " + (authErr?.message || "Benutzer konnte nicht erstellt werden"));
         setLoading(false);
         return;
       }
 
-      // 2. Update profile
-      await supabaseAdmin.from("profiles").update({
+      // 2. Update profile (trigger already created it with role='client')
+      const { error: updateErr } = await supabaseAdmin.from("profiles").update({
         full_name: name.trim(),
         role: "worker",
         company_id: companyId,
@@ -63,10 +76,19 @@ export default function NewWorkerScreen() {
         is_active: true,
       }).eq("id", authData.user.id);
 
+      console.log("Profile update result:", { error: updateErr });
+
+      if (updateErr) {
+        setError("Profil: " + updateErr.message);
+        setLoading(false);
+        return;
+      }
+
       setCreatedCode(code);
       setName("");
     } catch (e: any) {
-      Alert.alert("Fehler", e.message || "Unbekannter Fehler");
+      console.error("Worker creation error:", e);
+      setError("Exception: " + (e.message || "Unbekannter Fehler"));
     }
     setLoading(false);
   };
@@ -87,7 +109,6 @@ export default function NewWorkerScreen() {
         }}
       >
         {createdCode ? (
-          // Success — show code
           <View style={{ alignItems: "center" }}>
             <View
               style={{
@@ -109,7 +130,6 @@ export default function NewWorkerScreen() {
               Geben Sie diesen Code dem Mitarbeiter. Er loggt sich damit in der App ein.
             </Text>
 
-            {/* Code display */}
             <View
               style={{
                 backgroundColor: "#1e293b",
@@ -154,7 +174,6 @@ export default function NewWorkerScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          // Form
           <>
             <View style={{ alignItems: "center", marginBottom: 32 }}>
               <View
@@ -177,6 +196,18 @@ export default function NewWorkerScreen() {
                 Erstellen Sie einen Mitarbeiter. Er erhält einen Login-Code.
               </Text>
             </View>
+
+            {/* Error message */}
+            {error && (
+              <View style={{
+                backgroundColor: "#fee2e2",
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 16,
+              }}>
+                <Text style={{ color: "#dc2626", fontSize: 13 }}>{error}</Text>
+              </View>
+            )}
 
             <Text style={{ fontSize: 13, fontWeight: "600", color: "#475569", marginBottom: 6 }}>
               Name des Mitarbeiters

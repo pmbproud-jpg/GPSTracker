@@ -1,10 +1,9 @@
 import { useAuth } from "@/src/providers/AuthProvider";
-import { supabase } from "@/src/lib/supabase/client";
+import { supabase, supabaseAdmin } from "@/src/lib/supabase/client";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -46,27 +45,16 @@ export default function WorkerListScreen() {
   }, [fetch]);
 
   const toggleActive = async (w: Worker) => {
-    await supabase.from("profiles").update({ is_active: !w.is_active }).eq("id", w.id);
+    await supabaseAdmin.from("profiles").update({ is_active: !w.is_active }).eq("id", w.id);
     fetch();
   };
 
-  const deleteWorker = (w: Worker) => {
-    Alert.alert(
-      "Mitarbeiter löschen?",
-      `${w.full_name || w.worker_code} wirklich entfernen?`,
-      [
-        { text: "Abbrechen" },
-        {
-          text: "Löschen",
-          style: "destructive",
-          onPress: async () => {
-            await supabase.from("locations").delete().eq("user_id", w.id);
-            await supabase.from("profiles").delete().eq("id", w.id);
-            fetch();
-          },
-        },
-      ]
-    );
+  const deleteWorker = async (w: Worker) => {
+    if (!window.confirm(`${w.full_name || w.worker_code} wirklich entfernen?`)) return;
+    await supabaseAdmin.from("locations").delete().eq("user_id", w.id);
+    await supabaseAdmin.from("profiles").delete().eq("id", w.id);
+    await supabaseAdmin.auth.admin.deleteUser(w.id);
+    fetch();
   };
 
   const formatAge = (d: string | null) => {

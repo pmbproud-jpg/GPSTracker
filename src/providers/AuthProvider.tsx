@@ -1,4 +1,4 @@
-import { supabase } from "@/src/lib/supabase/client";
+import { supabase, supabaseAdmin } from "@/src/lib/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -93,26 +93,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (error) return { error: error.message };
 
-    // Create company for new client
+    // Create company for new client (admin client bypasses RLS)
     if (data.user) {
-      const { error: compErr } = await supabase.from("companies").insert({
+      const { error: compErr } = await supabaseAdmin.from("companies").insert({
         name: fullName,
         email,
         owner_id: data.user.id,
       });
       if (compErr) return { error: compErr.message };
 
-      // Update profile with company
-      const { data: company } = await supabase
+      const { data: company } = await supabaseAdmin
         .from("companies")
         .select("id")
         .eq("owner_id", data.user.id)
         .single();
 
       if (company) {
-        await supabase
+        await supabaseAdmin
           .from("profiles")
-          .update({ full_name: fullName, company_id: company.id })
+          .update({ full_name: fullName, company_id: company.id, role: "client" })
           .eq("id", data.user.id);
       }
     }
