@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
+  Linking,
   Platform,
   RefreshControl,
   ScrollView,
@@ -205,11 +205,7 @@ export default function ClientMap() {
           <Ionicons name="refresh" size={20} color="#4A90D9" />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => {
-            if (typeof window !== "undefined" && window.confirm("Abmelden?")) {
-              signOut();
-            }
-          }
+          onPress={() => signOut()
           }
           style={{ padding: 4 }}
         >
@@ -283,9 +279,20 @@ export default function ClientMap() {
                     </Text>
                   </View>
                   {w.last_latitude && w.last_longitude && (
-                    <Text style={{ fontSize: 10, color: "#94a3b8", fontFamily: isWeb ? "monospace" : undefined }}>
-                      {w.last_latitude.toFixed(4)},{"\n"}{w.last_longitude.toFixed(4)}
-                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const url = `https://www.google.com/maps?q=${w.last_latitude},${w.last_longitude}`;
+                        Linking.openURL(url);
+                      }}
+                      style={{
+                        backgroundColor: "#eff6ff",
+                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                      }}
+                    >
+                      <Ionicons name="navigate" size={16} color="#4A90D9" />
+                    </TouchableOpacity>
                   )}
                   <Ionicons name={sel ? "chevron-down" : "chevron-forward"} size={16} color="#94a3b8" />
                 </TouchableOpacity>
