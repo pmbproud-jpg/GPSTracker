@@ -14,41 +14,46 @@ const DEFERRED_DISTANCE_M = 50;
 let _activeUserId: string | null = null;
 let _activeCompanyId: string | null = null;
 
-TaskManager.defineTask(TASK_NAME, async ({ data, error }) => {
-  if (error || !data) return;
-  const { locations } = data as { locations: Location.LocationObject[] };
-  if (!locations?.length) return;
+// Wrap in try-catch — defineTask at module level can crash the app
+try {
+  TaskManager.defineTask(TASK_NAME, async ({ data, error }) => {
+    if (error || !data) return;
+    const { locations } = data as { locations: Location.LocationObject[] };
+    if (!locations?.length) return;
 
-  const loc = locations[locations.length - 1];
-  const uid = _activeUserId;
-  const cid = _activeCompanyId;
-  if (!uid) return;
+    const loc = locations[locations.length - 1];
+    const uid = _activeUserId;
+    const cid = _activeCompanyId;
+    if (!uid || !supabase) return;
 
-  try {
-    const recorded_at = new Date(loc.timestamp).toISOString();
-    await supabase.from("locations").insert({
-      user_id: uid,
-      company_id: cid,
-      latitude: loc.coords.latitude,
-      longitude: loc.coords.longitude,
-      accuracy: loc.coords.accuracy,
-      altitude: loc.coords.altitude,
-      speed: loc.coords.speed,
-      heading: loc.coords.heading,
-      recorded_at,
-    });
-    await supabase
-      .from("profiles")
-      .update({
-        last_latitude: loc.coords.latitude,
-        last_longitude: loc.coords.longitude,
-        last_location_at: recorded_at,
-      })
-      .eq("id", uid);
-  } catch (e) {
-    console.warn("BG GPS error:", e);
-  }
-});
+    try {
+      const recorded_at = new Date(loc.timestamp).toISOString();
+      await supabase.from("locations").insert({
+        user_id: uid,
+        company_id: cid,
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        accuracy: loc.coords.accuracy,
+        altitude: loc.coords.altitude,
+        speed: loc.coords.speed,
+        heading: loc.coords.heading,
+        recorded_at,
+      });
+      await supabase
+        .from("profiles")
+        .update({
+          last_latitude: loc.coords.latitude,
+          last_longitude: loc.coords.longitude,
+          last_location_at: recorded_at,
+        })
+        .eq("id", uid);
+    } catch (e) {
+      console.warn("BG GPS error:", e);
+    }
+  });
+} catch (e) {
+  console.warn("TaskManager.defineTask failed:", e);
+}
 
 export function useGPSTracking() {
   const { profile } = useAuth();
@@ -106,7 +111,7 @@ async function startTracking() {
       deferredUpdatesDistance: DEFERRED_DISTANCE_M,
       foregroundService: {
         notificationTitle: "GPSTracker",
-        notificationBody: "Lokalizacja aktywna",
+        notificationBody: "Standortverfolgung aktiv",
         notificationColor: "#4A90D9",
         killServiceOnDestroy: false,
       },
@@ -128,7 +133,7 @@ async function stopTracking() {
 
 async function sendOnce() {
   const uid = _activeUserId;
-  if (!uid) return;
+  if (!uid || !supabase) return;
   try {
     const loc = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.High,
