@@ -1,16 +1,26 @@
 import { AuthProvider, useAuth } from "@/src/providers/AuthProvider";
-import { useGPSTracking } from "@/src/hooks/useGPSTracking";
 import { Slot, useRouter, useSegments } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
+
+// GPS tracking only on mobile — lazy import to prevent web crash
+function useGPSTrackingSafe() {
+  if (Platform.OS === "web") return;
+  try {
+    const { useGPSTracking } = require("@/src/hooks/useGPSTracking");
+    useGPSTracking();
+  } catch (e) {
+    console.warn("GPS tracking init failed:", e);
+  }
+}
 
 function RootNavigator() {
   const { profile, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
-  // GPS tracking for workers
-  useGPSTracking();
+  // GPS tracking — safe, won't crash app
+  useGPSTrackingSafe();
 
   useEffect(() => {
     if (loading) return;
